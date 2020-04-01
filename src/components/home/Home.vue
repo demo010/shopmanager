@@ -5,16 +5,17 @@
       <div class="el-name"><h2>管理后台系统</h2></div>
       <div class="login-out"><a @click.prevent="handleLoginOut()">退出</a></div>
     </el-header>
+    <el-container>
     <el-aside width="200px" class="aside">
-      <el-menu :mode='vertical' :unique-opened='true'>
+      <el-menu :default-active="$route.path" :unique-opened='true' background-color='#ffffff' active-text-color="#00ffff" router>
         <!-- 1 -->
-        <el-submenu index="1">
+        <el-submenu index="">
           <template slot="title">
             <i class="el-icon-location"></i>
             <span>用户管理</span>
           </template>
           <el-menu-item-group>
-            <el-menu-item index="1-1">
+            <el-menu-item index="/userlist">
               <i class="el-icon-menu"></i>
               <span>用户列表</span>
             </el-menu-item>
@@ -86,7 +87,10 @@
         </el-submenu>
       </el-menu>
     </el-aside>
-      <el-main class="main">Main</el-main>
+      <el-main class="main">
+        <router-view></router-view>
+      </el-main>
+    </el-container>
   </el-container>
 </template>
 
