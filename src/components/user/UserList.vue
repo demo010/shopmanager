@@ -74,7 +74,7 @@
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       :current-page="pagenum"
-      :page-sizes="[2, 4]"
+      :page-sizes="[2, 4, 6, 8]"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
       :total="total"
@@ -97,20 +97,25 @@ export default {
     }
   },
   created () {
-    this.getUserListData()
+    this.getUserListData(this.query, this.pagenum, this.pagesize, true)
   },
   methods: {
-    async getUserListData () {
+    // 获取用户列表,
+    // q->要查询的关键字; pn->页数; ps->每页条数; me->获取数据后是否需要提示框(true/false)
+    async getUserListData (q, pn, ps, me) {
       const AUTH_TOKEN = localStorage.getItem('token')
       this.$http.defaults.headers.common.Authorization = AUTH_TOKEN
-      const res = await this.$http.get(`users?query=${this.query}&pagenum=${this.pagenum}&pagesize=${this.pagesize}`)
+      const res = await this.$http.get(`users?query=${q}&pagenum=${pn}&pagesize=${ps}`)
       const { meta: { status, msg }, data: { users, total } } = res.data
-      if (status === 200) {
+      if (status === 200 && me) {
         this.total = total
         this.userList = users
         this.$message.success(msg)
-      } else {
+      } else if (me) {
         this.$message.warning(msg)
+      } else if (status === 200 && !me) {
+        this.total = total
+        this.userList = users
       }
     },
     // 分页相关方法
@@ -125,11 +130,11 @@ export default {
       }
     }, */
     handleSizeChange (val) {
-
+      this.getUserListData(this.query, this.pagenum, val, false)
     },
     // 当前页改变时
     handleCurrentChange (val) {
-
+      this.getUserListData(this.query, val, this.pagesize, false)
     }
   }
 }
