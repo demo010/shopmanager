@@ -3,7 +3,7 @@
     <el-header class="header">
       <div class="el-logo"><img src="../../assets/image/LOGO.png" class="logo" alt="无法显示图片"></div>
       <div class="el-name"><h2>管理后台系统</h2></div>
-      <div class="login-out"><a href="#">退出</a></div>
+      <div class="login-out"><a @click.prevent="handleLoginOut()">退出</a></div>
     </el-header>
     <el-aside width="200px" class="aside">
       <el-menu :mode='vertical' :unique-opened='true'>
@@ -91,7 +91,27 @@
 </template>
 
 <script>
-export default {}
+export default {
+  // 在组件渲染之前,判断是否有token
+  beforeCreate () {
+    // 获取localStorage中存储的token
+    const token = localStorage.getItem('token')
+    if (!token) {
+      // 如果没有token,--> 登录
+      this.$router.push({ name: 'Login' })
+    }
+  },
+  methods: {
+    // 退出登录
+    handleLoginOut () {
+      // 清除localStorage中token
+      // window.localStorage.removeItem('token')
+      localStorage.clear()
+      this.$message.success('退出成功!')
+      this.$router.push({ name: 'Login' })
+    }
+  }
+}
 </script>
 
 <style>
