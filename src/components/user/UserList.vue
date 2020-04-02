@@ -11,13 +11,35 @@
     <el-row style="margin:15px 0px">
       <el-col :span='8'>
         <el-input placeholder="请输入内容" v-model="query" class="input-with-select">
-          <el-button slot="append" icon="el-icon-search"></el-button>
+          <el-button slot="append" icon="el-icon-search" @click.prevent='handleQuery()'></el-button>
         </el-input>
       </el-col>
       <el-col :span="4">
-        <el-button type="primary">添加用户</el-button>
+        <el-button type="primary" @click.prevent="dialogFormVisibleAdd = true">添加用户</el-button>
       </el-col>
     </el-row>
+
+    <!-- 点击按钮,出现对话框,用于添加用户操作 -->
+    <el-dialog title="添加用户" :visible.sync="dialogFormVisibleAdd">
+      <el-form v-model="formAdd">
+        <el-form-item label="用户名" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.username" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.password" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.email" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="电话" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.mobile" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleAddUser()">确 定</el-button>
+      </div>
+    </el-dialog>
 
     <!-- 3.表格 -->
     <el-table
@@ -30,8 +52,7 @@
       </el-table-column>
       <el-table-column
         prop="username"
-        label="姓名"
-        width="80">
+        label="姓名">
       </el-table-column>
       <el-table-column
         prop="email"
@@ -87,24 +108,46 @@
 export default {
   data () {
     return {
+      // 查询
       query: '',
       // 分页相关数据
       pagenum: 1, // 页数
       pagesize: 2, // 每页显示的条数
-      total: '', // 总条数
+      total: 0, // 总条数
       // 获得用户列表数据
-      userList: []
+      userList: [],
+      // 对话框
+      // 添加用户对话框
+      dialogFormVisibleAdd: false,
+      // 添加用户表单数据
+      // username用户名称不能为空,password用户密码不能为空,email邮箱可以为空,mobile手机号可以为空
+      formAdd: {
+        username: '',
+        password: '',
+        email: '',
+        mobile: ''
+      },
+      formLabelWidth: '100px',
+      // 获取存储的token
+      AUTH_TOKEN: localStorage.getItem('token')
     }
   },
-  created () {
-    this.getUserListData(this.query, this.pagenum, this.pagesize, true)
+  watch: {
+    // 监听输入框内容的改变,一旦输入框内容清空,则重新加载数据
+    query (newVal) {
+      // console.log(newVal)
+      if (!newVal) {
+        this.pagenum = 1
+        this.getUserListData(newVal, this.pagenum, this.pagesize, false)
+      }
+    }
   },
   methods: {
     // 获取用户列表,
     // q->要查询的关键字; pn->页数; ps->每页条数; me->获取数据后是否需要提示框(true/false)
     async getUserListData (q, pn, ps, me) {
-      const AUTH_TOKEN = localStorage.getItem('token')
-      this.$http.defaults.headers.common.Authorization = AUTH_TOKEN
+      // const AUTH_TOKEN = localStorage.getItem('token')
+      this.$http.defaults.headers.common.Authorization = this.AUTH_TOKEN
       const res = await this.$http.get(`users?query=${q}&pagenum=${pn}&pagesize=${ps}`)
       const { meta: { status, msg }, data: { users, total } } = res.data
       if (status === 200 && me) {
@@ -116,6 +159,26 @@ export default {
       } else if (status === 200 && !me) {
         this.total = total
         this.userList = users
+      }
+    },
+    // 添加用户操纵 -- 发送数据
+    async handleAddUser () {
+      console.log(this.formAdd)
+      // this.$http.defaults.headers.common.Authorization = this.AUTH_TOKEN
+      const res = await this.$http.post('users', this.formAdd)
+      console.log(res)
+      const {
+        meta: { status, msg }
+      } = res.data
+      // console.log(msg, status, data)
+      if (status === 201) { // 添加用户成功
+        this.$message.success(msg)
+        this.dialogFormVisibleAdd = false // 关闭dialog
+        this.getUserListData(this.query, this.pagenum, this.pagesize, false) // 重新加载数据--更新视图
+        // 清除文本框数据
+        this.formAdd = {}
+      } else { // 添加用户失败
+        this.$message.warning(msg)
       }
     },
     // 分页相关方法
@@ -130,12 +193,22 @@ export default {
       }
     }, */
     handleSizeChange (val) {
+      this.pagesize = val
       this.getUserListData(this.query, this.pagenum, val, false)
     },
     // 当前页改变时
     handleCurrentChange (val) {
+      this.pagenum = val
       this.getUserListData(this.query, val, this.pagesize, false)
+    },
+    // 查询
+    handleQuery () {
+      this.pagenum = 1
+      this.getUserListData(this.query, this.pagenum, this.pagesize, true)
     }
+  },
+  created () {
+    this.getUserListData(this.query, this.pagenum, this.pagesize, true)
   }
 }
 </script>
