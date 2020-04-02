@@ -63,8 +63,10 @@
         <template slot-scope="scope">
           <el-button size="mini" plain type="primary" icon="el-icon-edit" circle
           @click.prevent="handleEditTipbox(scope.row.id)"></el-button>
-          <el-button size="mini" plain type="danger" icon="el-icon-delete" circle @click.prevent="handelDeleteTipBox(scope.row.id)"></el-button>
-          <el-button size="mini" plain type="success" icon="el-icon-check" circle></el-button>
+          <el-button size="mini" plain type="danger" icon="el-icon-delete" circle
+          @click.prevent="handelDeleteTipBox(scope.row.id)"></el-button>
+          <el-button size="mini" plain type="success" icon="el-icon-check" circle
+          @click.prevent="handleRoleTipBox(scope.row.id)"></el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -122,6 +124,26 @@
         <el-button type="primary" @click="handleEditUser()">确 定</el-button>
       </div>
     </el-dialog>
+    <!-- 分配用户角色 -->
+    <el-dialog title="分配角色" :visible.sync="dialogFormVisibleRole">
+    <el-form :model="formEdit">
+      <el-form-item label="用户名" :label-width="formLabelWidth">
+      {{formEdit.username}}
+      </el-form-item>
+      <el-form-item label="角色" :label-width="formLabelWidth">
+        <!-- 如果select的绑定的数据的值 和 option的value一样,就会显示该option的label的值 -->
+        <el-select v-model="currentRoleId">
+          <el-option label="-请选择-" :value="-1"></el-option>
+          <el-option v-for="(item, i) in RoleList" :key="i" :label="item.roleName"
+          :value="item.id"></el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="dialogFormVisibleRole = false">取 消</el-button>
+      <el-button type="primary" @click="handleSetRole()">确 定</el-button>
+    </div>
+  </el-dialog>
 </el-card>
 </template>
 
@@ -153,10 +175,15 @@ export default {
       formEdit: {
         id: 0,
         username: '',
-        role_id: 0,
+        rid: 0,
         mobile: '',
         email: ''
       },
+      // 3.分配用户角色对话框
+      currentRoleId: -1,
+      dialogFormVisibleRole: false,
+      RoleList: [],
+
       formLabelWidth: '100px',
       // 获取存储的token
       AUTH_TOKEN: localStorage.getItem('token')
@@ -267,16 +294,8 @@ export default {
 
     // 编辑用户数据提示框
     async handleEditTipbox (id) {
-      const res = await this.$http.get(`users/${id}`)
-      // console.log(res.data)
-      const {
-        meta: { status },
-        data
-      } = res.data
-      console.log(status, data)
-      if (status === 200) {
-        this.formEdit = data
-      }
+      this.formEdit = await this.getUserDataById(id)
+      // console.log(this.formEdit)
       this.dialogFormVisibleEdit = true
     },
 
@@ -294,9 +313,66 @@ export default {
         this.dialogFormVisibleEdit = false
         this.$message.success(msg)
         this.getUserListData(this.query, this.pagenum, this.pagesize, false)
+        this.formEdit = {}
       } else {
         this.$message.warning(msg)
       }
+    },
+
+    // 分配用户角色对话框
+    async handleRoleTipBox (id) {
+      // this.currentName = user.username
+      this.dialogFormVisibleRole = true
+      this.formEdit = await this.getUserDataById(id)
+      // console.log(this.formEdit)
+      this.currentRoleId = this.formEdit.rid
+      // console.log(this.currentRoleId)
+      this.RoleList = await this.getRoleList()
+      // console.log(this.RoleList)
+    },
+
+    // 分配角色提交
+    async handleSetRole () {
+      const res = await this.$http.put(`users/${this.formEdit.id}/role`, {
+        rid: this.currentRoleId
+      })
+      // console.log(res, res.data)
+      if (res.data.meta.status === 200) {
+        this.dialogFormVisibleRole = false
+      } else {
+        this.$message.warning(res.data.meta.msg)
+      }
+    },
+
+    // 根据用户ID获取用户数据
+    async getUserDataById (id) {
+      let tempdata = {}
+      const res = await this.$http.get(`users/${id}`)
+      // console.log(res.data)
+      const {
+        meta: { status },
+        data
+      } = res.data
+      // console.log(status, data)
+      if (status === 200) {
+        tempdata = data
+      }
+      // console.log(tempdata)
+      return tempdata
+    },
+
+    // 获取角色列表信息
+    async getRoleList () {
+      const res = await this.$http.get('roles')
+      // console.log(res.data)
+      const tempArr = res.data.data.map((item, index) => {
+        return {
+          id: item.id,
+          roleName: item.roleName
+        }
+      })
+      // console.log(tempArr)
+      return tempArr
     },
 
     // 分页相关方法---------
