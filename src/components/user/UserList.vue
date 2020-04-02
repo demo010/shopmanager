@@ -82,9 +82,9 @@
       </el-table-column>
       <el-table-column
         label="操作">
-        <template>
+        <template slot-scope="scope">
           <el-button size="mini" plain type="primary" icon="el-icon-edit" circle></el-button>
-          <el-button size="mini" plain type="danger" icon="el-icon-delete" circle></el-button>
+          <el-button size="mini" plain type="danger" icon="el-icon-delete" circle @click.prevent="handelDeleteTipBox(scope.row.id)"></el-button>
           <el-button size="mini" plain type="success" icon="el-icon-check" circle></el-button>
         </template>
       </el-table-column>
@@ -161,12 +161,13 @@ export default {
         this.userList = users
       }
     },
+
     // 添加用户操纵 -- 发送数据
     async handleAddUser () {
       console.log(this.formAdd)
       // this.$http.defaults.headers.common.Authorization = this.AUTH_TOKEN
       const res = await this.$http.post('users', this.formAdd)
-      console.log(res)
+      // console.log(res)
       const {
         meta: { status, msg }
       } = res.data
@@ -181,6 +182,52 @@ export default {
         this.$message.warning(msg)
       }
     },
+
+    // 删除用户--弹出提示框
+    handelDeleteTipBox (id) {
+      console.log(id)
+      // const res = this.$http.delete(`users/:${id}`)
+      // console.log(res)
+      this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async () => {
+        const res = await this.$http.delete(`users/${id}`)
+        console.log(res)
+        // msg: "删除成功", status: 200
+        const {
+          meta: { msg, status }
+        } = res
+        // 删除成功 -- 1.提示 2.更新视图
+        if (status === 200) {
+          this.pagenum = 1
+          this.getUserListData(this.query, this.pagenum, this.pagesize, false)
+
+          this.$message({
+            type: 'success',
+            message: msg
+          })
+        } else { // 删除失败,提示
+          this.$message({
+            type: 'warning',
+            message: msg
+          })
+        }
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      })
+    },
+    // 删除用户 -- 提交数据
+    /* async handledeleteUser (id) {
+      const res = await this.$http.delete(`users/${id}`)
+      // console.log(res)
+      return res.data
+    }, */
+
     // 分页相关方法
     // 每页条数改变时
     /* async handleSizeChange (val) {
