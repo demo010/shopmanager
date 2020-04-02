@@ -76,7 +76,7 @@
         prop="mg_state"
         label="用户状态">
         <template slot-scope="scope">
-          <el-switch v-model="scope.row.mg_state"
+          <el-switch v-model="scope.row.mg_state" @change="changeMgState(scope.row.id, scope.row.mg_state)"
           active-color="#13ce66" inactive-color="#ff4949" active-text="启用" inactive-text="禁用"></el-switch>
         </template>
       </el-table-column>
@@ -183,7 +183,7 @@ export default {
       }
     },
 
-    // 删除用户--弹出提示框
+    // 删除用户--弹出提示框+提交数据
     handelDeleteTipBox (id) {
       console.log(id)
       // const res = this.$http.delete(`users/:${id}`)
@@ -221,24 +221,22 @@ export default {
         })
       })
     },
-    // 删除用户 -- 提交数据
-    /* async handledeleteUser (id) {
-      const res = await this.$http.delete(`users/${id}`)
-      // console.log(res)
-      return res.data
-    }, */
+
+    // 修改用户状态
+    async changeMgState (id, state) {
+      console.log(id, state)
+      const res = await this.$http.put(`users/${id}/state/${state}`)
+      console.log(res)
+      const {
+        meta: { msg, status }
+      } = res.data
+      if (status === 200) {
+        this.$message.success(msg)
+      }
+    },
 
     // 分页相关方法
     // 每页条数改变时
-    /* async handleSizeChange (val) {
-      const AUTH_TOKEN = localStorage.getItem('token')
-      this.$http.defaults.headers.common.Authorization = AUTH_TOKEN
-      const res = await this.$http.get(`users?query=${this.query}&pagenum=${this.pagenum}&pagesize=${val}`)
-      const { meta: { status }, data: { users } } = res.data
-      if (status === 200) {
-        this.userList = users
-      }
-    }, */
     handleSizeChange (val) {
       this.pagesize = val
       this.getUserListData(this.query, this.pagenum, val, false)
