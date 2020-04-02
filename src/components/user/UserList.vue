@@ -19,28 +19,6 @@
       </el-col>
     </el-row>
 
-    <!-- 点击按钮,出现对话框,用于添加用户操作 -->
-    <el-dialog title="添加用户" :visible.sync="dialogFormVisibleAdd">
-      <el-form v-model="formAdd">
-        <el-form-item label="用户名" :label-width="formLabelWidth">
-          <el-input v-model="formAdd.username" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" :label-width="formLabelWidth">
-          <el-input v-model="formAdd.password" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="邮箱" :label-width="formLabelWidth">
-          <el-input v-model="formAdd.email" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="电话" :label-width="formLabelWidth">
-          <el-input v-model="formAdd.mobile" autocomplete="off"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleAddUser()">确 定</el-button>
-      </div>
-    </el-dialog>
-
     <!-- 3.表格 -->
     <el-table
       :data="userList"
@@ -83,7 +61,8 @@
       <el-table-column
         label="操作">
         <template slot-scope="scope">
-          <el-button size="mini" plain type="primary" icon="el-icon-edit" circle></el-button>
+          <el-button size="mini" plain type="primary" icon="el-icon-edit" circle
+          @click.prevent="handleEditTipbox(scope.row.id)"></el-button>
           <el-button size="mini" plain type="danger" icon="el-icon-delete" circle @click.prevent="handelDeleteTipBox(scope.row.id)"></el-button>
           <el-button size="mini" plain type="success" icon="el-icon-check" circle></el-button>
         </template>
@@ -101,6 +80,48 @@
       :total="total"
       style="margin-top:15px">
     </el-pagination>
+
+    <!-- 对话框组件 -->
+    <!-- 点击按钮,出现对话框,用于添加用户操作 -->
+    <el-dialog title="添加用户" :visible.sync="dialogFormVisibleAdd">
+      <el-form v-model="formAdd">
+        <el-form-item label="用户名" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.username" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.password" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.email" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="电话" :label-width="formLabelWidth">
+          <el-input v-model="formAdd.mobile" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisibleAdd = false">取 消</el-button>
+        <el-button type="primary" @click="handleAddUser()">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 点击按钮,出现对话框,用于编辑用户数据操作 -->
+    <el-dialog title="添加用户" :visible.sync="dialogFormVisibleEdit">
+      <el-form v-model="formEdit">
+        <el-form-item label="用户名" :label-width="formLabelWidth">
+          <el-input v-model="formEdit.username" autocomplete="off" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" :label-width="formLabelWidth">
+          <el-input v-model="formEdit.email" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="电话" :label-width="formLabelWidth">
+          <el-input v-model="formEdit.mobile" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisibleEdit = false">取 消</el-button>
+        <el-button type="primary" @click="handleEditUser()">确 定</el-button>
+      </div>
+    </el-dialog>
 </el-card>
 </template>
 
@@ -117,7 +138,7 @@ export default {
       // 获得用户列表数据
       userList: [],
       // 对话框
-      // 添加用户对话框
+      // 1.添加用户对话框
       dialogFormVisibleAdd: false,
       // 添加用户表单数据
       // username用户名称不能为空,password用户密码不能为空,email邮箱可以为空,mobile手机号可以为空
@@ -126,6 +147,15 @@ export default {
         password: '',
         email: '',
         mobile: ''
+      },
+      // 2.编辑用户数据对话框
+      dialogFormVisibleEdit: false,
+      formEdit: {
+        id: 0,
+        username: '',
+        role_id: 0,
+        mobile: '',
+        email: ''
       },
       formLabelWidth: '100px',
       // 获取存储的token
@@ -235,7 +265,41 @@ export default {
       }
     },
 
-    // 分页相关方法
+    // 编辑用户数据提示框
+    async handleEditTipbox (id) {
+      const res = await this.$http.get(`users/${id}`)
+      // console.log(res.data)
+      const {
+        meta: { status },
+        data
+      } = res.data
+      console.log(status, data)
+      if (status === 200) {
+        this.formEdit = data
+      }
+      this.dialogFormVisibleEdit = true
+    },
+
+    // 编辑用户数据-数据提交
+    async handleEditUser () {
+      const res = await this.$http.put(`users/${this.formEdit.id}`, this.formEdit)
+      // console.log(res)
+      const {
+        meta: {
+          msg, status
+        }
+      } = res.data
+      // 更新成功--1.关闭对话框, 2.提示 3.更新视图
+      if (status === 200) {
+        this.dialogFormVisibleEdit = false
+        this.$message.success(msg)
+        this.getUserListData(this.query, this.pagenum, this.pagesize, false)
+      } else {
+        this.$message.warning(msg)
+      }
+    },
+
+    // 分页相关方法---------
     // 每页条数改变时
     handleSizeChange (val) {
       this.pagesize = val
